@@ -34,7 +34,6 @@ function showUserInformation(user){
         <p><strong>Password:</strong> ${"*".repeat(user.password.length)}</p>
         <p><strong>Age:</strong> ${user.age || "Not set"}</p>
         <p><strong>Bio:</strong> ${user.bio || "Not Bio set"}</p>
-        ${user.gallery ? `<img src="${user.gallery}" alt="Profile image" style="max-width:200px; border-radius:12px;" />` : ""}
         <br>
         <button id="edit-profile-btn">Edit Profile</button>
     
@@ -50,11 +49,12 @@ function showEditForm(user) {
   informationDiv.innerHTML = `
     <h3>Edit Profile</h3>
     <form id="edit-profile-form">
-        <input type="text" id="edit-username" value="${user.name}" required />
-        <input type="password" id="edit-password" value="${user.password}" required />
-        <input type="number" id="edit-age" value="${user.age || ''}placeholder="Age" />
+        <input type="text" id="edit-username" value="${user.name}" required/>
+        <input type="password" id="edit-password" value="${user.password}" required/>
+        <input type="number" id="edit-age" value="${user.age || ''}" placeholder="Age" />
         <textarea id="edit-bio" placeholder=" write something to let people know more about you">${user.bio || ''}</textarea>
-        <input type ="text" id ="edit-gallery" value="${user.gallery || ''}" placeholder="Image URL" />
+
+        <br/>
         <button type="submit">Save Changes</button>
     </form>
   `;
@@ -64,6 +64,9 @@ function showEditForm(user) {
     const updatedUser = {
       name: document.getElementById("edit-username").value,
       password: document.getElementById("edit-password").value,
+      age:document.getElementById("edit-age").value,
+      bio:document.getElementById("edit-bio").value,
+
     };
 
     console.log(" Local user object:", user);
