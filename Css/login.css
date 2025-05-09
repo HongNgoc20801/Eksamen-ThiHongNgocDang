@@ -1,0 +1,19 @@
+body {
+  background: linear-gradient(to right, #ffdde1, #ee9ca7);
+}
+
+h2 {
+  font-family: 'Pacifico', cursive;
+  color: #d63384;
+  text-align: center;
+}
+
+.bg-success {
+  background-color: #d63384 !important;
+  color: white;
+}
+
+.bg-secondary {
+  background-color: #7cb9ee !important;
+
+}

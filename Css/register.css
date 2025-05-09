@@ -1,0 +1,17 @@
+
+body {
+  background: linear-gradient(to right, #e0c3fc, #8ec5fc);
+}
+
+h2 {
+  font-family: 'Pacifico', cursive;
+  color: #0d6efd;
+  text-align: center;
+}
+
+.bg-primary {
+  background-color: #4068ed !important;
+  color: white;
+}
+
+

@@ -1,43 +1,41 @@
-body{
-    font-family: 'Segoe UI', san-serif;
-    background: linear-gradient(to right, #ffdde1,#ee9ca7);
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 0;
+body {
+  background: linear-gradient(to right, #ffdde1, #ee9ca7);
+  min-height: 100vh;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
-.container{
-    background-color: white;
-    padding: 2.5rem;
-    box-shadow: 0 10px 25px rgba(204, 18, 123, 0.1);
-    max-width: 400px;
-    width: 100%;
+
+.container {
+  background-color: white;
+  padding: 2.5rem;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(233, 9, 177, 0.1);
+  max-width: 400px;
+  width: 100%;
 }
-h2{
-    font-family: 'Pacifio', cursive;
-    text-align: center;
-    color: #d63384;
+
+
+
+input[type="text"],
+input[type="password"] {
+  display: block;
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
 }
-input[type="text"], input[type="password"]{
-    display: block;
-    width: 100%;
-    margin-bottom: 1rem;
-    padding: 0.6rem 0.8rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
+
+button {
+  width: 100%;
+  padding: 0.6rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
 }
-button{
-    width: 100%;
-    padding:0.6rem;
-    font-size: 1rem;
-    border-radius: 8px;
-    border:none;
-}
-.bg-success{
-    background-color: #d63384 !important;
-    color: white;
-}
-.bg-secondary{
-    background-color: #63abea !important;
-}
+
+
+
