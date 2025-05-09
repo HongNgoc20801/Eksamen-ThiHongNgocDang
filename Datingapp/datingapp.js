@@ -32,6 +32,10 @@ function showUserInformation(user){
         <h3> Your Profile </h3>
         <p><strong>Username:</strong> ${user.name}</p>
         <p><strong>Password:</strong> ${"*".repeat(user.password.length)}</p>
+        <p><strong>Age:</strong> ${user.age || "Not set"}</p>
+        <p><strong>Bio:</strong> ${user.bio || "Not Bio set"}</p>
+        ${user.gallery ? `<img src="${user.gallery}" alt="Profile image" style="max-width:200px; border-radius:12px;" />` : ""}
+        <br>
         <button id="edit-profile-btn">Edit Profile</button>
     
     `;
@@ -46,9 +50,12 @@ function showEditForm(user) {
   informationDiv.innerHTML = `
     <h3>Edit Profile</h3>
     <form id="edit-profile-form">
-      <input type="text" id="edit-username" value="${user.name}" required />
-      <input type="password" id="edit-password" value="${user.password}" required />
-      <button type="submit">Save Changes</button>
+        <input type="text" id="edit-username" value="${user.name}" required />
+        <input type="password" id="edit-password" value="${user.password}" required />
+        <input type="number" id="edit-age" value="${user.age || ''}placeholder="Age" />
+        <textarea id="edit-bio" placeholder=" write something to let people know more about you">${user.bio || ''}</textarea>
+        <input type ="text" id ="edit-gallery" value="${user.gallery || ''}" placeholder="Image URL" />
+        <button type="submit">Save Changes</button>
     </form>
   `;
 
