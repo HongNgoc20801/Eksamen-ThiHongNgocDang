@@ -5,14 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dating App</title>
     <link rel="stylesheet" href="/Css/datingapp.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
 </head>
 <body>
     <div id ="information-user"></div>
     <nav>
-        <button id ="home"> Home</button>
-        <button id ="profile">Profile</button>
-        <button id ="swipe">Swipe</button>
-        <button id ="liked">Liked</button>
+        <button id ="nav-home"> Home</button>
+        <button id ="nav-profile">Profile</button>
+        <button id ="nav-swipe">Swipe</button>
+        <button id ="nav-liked">Liked</button>
     </nav>
     <main>
         <section id = "section-home">
@@ -20,9 +22,9 @@
             <p>This is a place where you can freely make friends and get to know each other.</p>
         </section>
 
-        <sectiion id="information" style ="display: none ;"></sectiion>
-        <section id="swipe" style="display: none;"></section>
-        <section id="liked" style="display: none;"></section>
+        <sectiion id="section-profile" style ="display: none ;"></sectiion>
+        <section id="section-swipe" style="display: none;"></section>
+        <section id="section-liked" style="display: none;"></section>
     </main>
 
     <script type="module" src="/Datingapp/datingapp.js"></script>
