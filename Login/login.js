@@ -17,7 +17,7 @@ loginForm.addEventListener("submit",async (event)=>{
         console.log("Matched user:", user);
         if (user.length > 0 ){
             localStorage.setItem("user", JSON.stringify(user[0]));
-            window.location.href="todo.html";
+            window.location.href="/Datingapp/datingapp.html";
         }else{
             alert("wrong username or password!");
         }
