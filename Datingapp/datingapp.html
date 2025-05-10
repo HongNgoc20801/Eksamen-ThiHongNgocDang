@@ -22,8 +22,22 @@
             <p>This is a place where you can freely make friends and get to know each other.</p>
         </section>
 
-        <sectiion id="section-profile" style ="display: none ;"></sectiion>
+        <section id="section-profile" style ="display: none ;"></section>
         <section id="section-swipe" style="display: none;">
+            <div id="filter-form" class="mb-3">
+                <select id="filter-sex">
+                    <option value="">All Genders</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                </select>
+
+                <input type ="number" id="filter-min" placeholder="Min age" min ="18"/>
+                <input type="number" id="filter-max" placeholder="Max age" max="18"/>
+                <input type="text" id="filter-country" placeholder="Country"/>
+
+                <button id="find" class="btn btn-sm btn-outline-primary">Find</button>
+            </div>
+
             <div id="random-card"></div>
             <div class="swipe-buttons"></div>
             <button id="btn-dislike" class="btn btn-secondary">Dislike</button>
