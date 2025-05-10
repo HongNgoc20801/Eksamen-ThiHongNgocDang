@@ -1,4 +1,5 @@
 import { apiUserUrl } from "../Authentication/AUTH.js";
+import getCrudUsers from "../Request/GET_user.js";
 import updateUserInformation from "../Request/PUT_info.js";
 
 
@@ -57,58 +58,75 @@ document.getElementById("find").addEventListener("click",()=>{
 });
 
 let currentUser = null;
-async function loadRandom(){
-    await new Promise((resolve) => setTimeout(resolve,50));
 
-    const filters =JSON.parse(localStorage.getItem("filters")) || {};
-    const workFilter=
-        filters.gender || filters.minAge || filters.maxAge || filters.country;
-    
-    const fetchNumber=workFilter ? 10:1;
+async function loadCrudUsers() {
+    const crud =await getCrudUsers();
+    return crud
+        .filter(u => u._id !== userLoggedI._id)
+        .map(u =>({
+            name: u.name,
+            age:parseInt(u.age),
+            email:u.email || "unknown@gmail.com",
+            picture: "https://cdn-icons-png.flaticon.com/512/1077/1077114.png",
+            location:{
+                city: u.location || "unknown",
+                country:"custom"
+            },
+            dob:{age:parseInt(u.age)},
+            isCustom:true
+        }));
+}
 
-    let baseUrl ="https://randomuser.me/api";
-    const params =[];
-    if(filters.gender)params.push(`gender=${filters.gender}`);
+async function loadRandom() {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const filters = JSON.parse(localStorage.getItem("filters")) || {};
+    const workFilter = filters.gender || filters.minAge || filters.maxAge || filters.country;
+    const fetchNumber = workFilter ? 10 : 1;
+
+    let baseUrl = "https://randomuser.me/api";
+    const params = [];
+    if (filters.gender) params.push(`gender=${filters.gender}`);
     params.push(`results=${fetchNumber}`);
-    
-    const url=`${baseUrl}?${params.join("&")}`;
-    
+    const url = `${baseUrl}?${params.join("&")}`;
 
-    const res = await fetch (url);
+    const [res, crudUsers] = await Promise.all([
+        fetch(url),
+        loadCrudUsers()
+    ]);
     const data = await res.json();
-    let candicates = data.results;
+    let candidates = [...data.results, ...crudUsers];
 
-    if (workFilter){
-        candicates=candicates.filter((user)=>{
-            const age =user.dob.age;
-            const country =user.location.country.toLowerCase();
-            const min =parseInt(filters.minAge) || 0;
-            const max=parseInt(filters.maxAge) || 120;
-            const objectiveCountry =(filters.country) || "".toLocaleLowerCase();
+    if (workFilter) {
+        const min = parseInt(filters.minAge) || 0;
+        const max = parseInt(filters.maxAge) || 120;
+        const targetCountry = (filters.country || "").toLowerCase();
 
-            const matchAge=age >= min && age <= max ;
-            const matchCountry=!objectiveCountry || country.includes(objectiveCountry);
-
+        candidates = candidates.filter(user => {
+            const age = user.dob.age;
+            const country = (user.location.country || "").toLowerCase();
+            const matchAge = age >= min && age <= max;
+            const matchCountry = !targetCountry || country.includes(targetCountry);
             return matchAge && matchCountry;
-
         });
-        if(candicates.length === 0){
-            document.getElementById("random-card").innerHTML=
-                "<p> No One match with your standars. Try again.</p>";
+
+        if (candidates.length === 0) {
+            document.getElementById("random-card").innerHTML =
+                "<p>No one matches your standards. Try again.</p>";
             return;
         }
     }
 
-    const user=candicates[0];
+    const user = candidates[0];
     currentUser = user;
 
-    const usercard = document.getElementById("random-card");
-    usercard.innerHTML = `
-        <img src ="${user.picture.large}" alt="User-Photo" style="border-radius:40%; width:100px;">
-        <h4>${user.name.first} ${user.name.last}</h4>
+    document.getElementById("random-card").innerHTML = `
+        <img src="${user.picture.large || user.picture}" alt="User-Photo" style="border-radius: 50%; width: 100px;">
+        <h4>${user.name.first || user.name}</h4>
         <p>Email: ${user.email}</p>
         <p>Age: ${user.dob.age}</p>
         <p>Location: ${user.location.city}, ${user.location.country}</p>
+        ${user.isCustom ? "<span class='badge'>Custom User</span>" : ""}
     `;
 }
 
@@ -194,18 +212,19 @@ function showEditForm(user) {
     }
 
     try {
-      const result = await updateUserInformation(user._id, updatedUser);
-      const updatedWithId = { ...updatedUser, _id: user._id };
-
-      localStorage.setItem("user", JSON.stringify(updatedWithId));
-      document.getElementById("information-user").innerHTML = `
-        <p>Welcome, <strong>${updatedWithId.name}</strong> </p>
-      `;
-      alert("Profile updated!");
-      showUserInformation(updatedWithId);
-    } catch (err) {
-      alert("Failed to update profile.");
-      console.log(err);
-    }
-  });
+            await updateUserInformation(user._id, updatedUser);
+            const updatedWithId = { ...updatedUser, _id: user._id };
+            localStorage.setItem("user", JSON.stringify(updatedWithId));
+            document.getElementById("information-user").innerHTML = `
+                <p>Welcome, <strong>${updatedWithId.name}</strong></p>
+            `;
+            alert("Profile updated!");
+            showUserInformation(updatedWithId);
+        } catch (err) {
+            alert("Failed to update profile.");
+            console.log(err);
+        }
+    });
 }
+
+

@@ -1,21 +1,32 @@
 import{apiUserUrl} from "../Authentication/AUTH.js";
-const registerForm =document.getElementById("register-form")
+import createUser from "../Request/POST_user.js";
 
-registerForm.addEventListener("submit",async (event)=>{
-    event.preventDefault();
-    const username =document.getElementById("username").value;
-    const password =document.getElementById("password").value;
+document.getElementById("register-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-    const user={name:username, password:password};
+    const name = document.getElementById("reg-name").value.trim();
+    const password = document.getElementById("reg-password").value.trim();
+    const email = document.getElementById("reg-email").value.trim();
 
-    console.log(user);
-    try{
-        const response =await axios.post(apiUserUrl,user)
-        alert("Account is created, you can login now ");
-        window.location.href="/Login/login.html";
-    }catch(error){
-        console.log("Can not register User",error)
+    if (!name || !password || !email) {
+        alert("Please fill in all required fields.");
+        return;
     }
 
+    const newUser = {
+        name,
+        password,
+        email
+    };
 
+    try {
+        const created = await createUser(newUser);
+        localStorage.setItem("user", JSON.stringify(created));
+        alert("Account created successfully!");
+        window.location.href = "/Datingapp/datingapp.html";
+    } catch (err) {
+        alert("Failed to register. Please try again.");
+        console.error(err);
+    }
 });
+
