@@ -22,11 +22,39 @@ document.getElementById("nav-profile").addEventListener("click",()=>{
 });
 
 
-document.getElementById("nav-swipe").addEventListener("click",()=> {
+document.getElementById("nav-swipe").addEventListener("click", () => {
     showSection("swipe");
-    setTimeout(()=>{
-        if (!currentUser) loadRandom();
-    },100);
+    navigator.geolocation.getCurrentPosition(async (position) => {
+        const latitude = parseFloat(position.coords.latitude.toFixed(6));
+        const longitude = parseFloat(position.coords.longitude.toFixed(6));
+
+        try {
+            const updatedUser = {
+                name: userLoggedIn.name,
+                password: userLoggedIn.password,
+                email: userLoggedIn.email || "",
+                age: userLoggedIn.age || "",
+                location: userLoggedIn.location || "",
+                bio: userLoggedIn.bio || "",
+                latitude,
+                longitude
+            };
+
+            await updateUser(userLoggedIn._id, updatedUser);
+            const updatedWithId = { ...updatedUser, _id: userLoggedIn._id };
+            localStorage.setItem("user", JSON.stringify(updatedWithId)); 
+            console.log(" Location updated:", latitude, longitude);
+            setTimeout(() => {
+                loadRandom();
+            }, 200);
+        } catch (err) {
+            console.error(" Failed to update location", err);
+            document.getElementById("random-card").innerHTML = "<p>Could not update location.</p>";
+        }
+    }, (error) => {
+        console.warn(" Location access denied or failed", error);
+        loadRandom(); 
+    });
 });
 
 
@@ -45,70 +73,131 @@ let filterset=JSON.parse(localStorage.getItem("filters")) || {
     minAge:"",
     maxAge:"",
     country:"",
+    distance:""
 };
+const distanceSlider = document.getElementById("filter-distance");
+const distanceLabel = document.getElementById("distance-value");
+
+if (filterset.distance) {
+    distanceSlider.value = filterset.distance;
+    distanceLabel.textContent = filterset.distance;
+} else {
+    filterset.distance = distanceSlider.value;
+    distanceLabel.textContent = distanceSlider.value;
+}
 
 document.getElementById("find").addEventListener("click",()=>{
     filterset.gender=document.getElementById("filter-sex").value;
     filterset.minAge=document.getElementById("filter-min").value;
     filterset.maxAge=document.getElementById("filter-max").value;
     filterset.country=document.getElementById("filter-country").value;
+    filterset.distance = document.getElementById("filter-distance").value; 
 
-    localStorage.setItem("filters", JSON.stringify(filterset));
     currentUser=null;
     loadRandom();
 });
 
+function haversineDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) ** 2 +
+              Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+              Math.sin(dLon/2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
 let currentUser = null;
 
 async function loadCrudUsers() {
-    const crud =await getCrudUsers();
-    return crud
-        .filter(u => u._id !== userLoggedI._id)
-        .map(u =>({
-            name: u.name,
-            age:parseInt(u.age),
-            email:u.email || "unknown@gmail.com",
-            picture: "https://cdn-icons-png.flaticon.com/512/1077/1077114.png",
-            location:{
-                city: u.location || "unknown",
-                country:"custom"
-            },
-            dob:{age:parseInt(u.age)},
-            isCustom:true
-        }));
+    const crudUsers = await getCrudUsers();
+
+    return crudUsers
+        .filter(u => u._id !== userLoggedIn._id)
+        .map(u => {
+            const lat = parseFloat(u.latitude);
+            const lon = parseFloat(u.longitude);
+            const age = parseInt(u.age);
+
+            return {
+                name: u.name,
+                age: age,
+                gender: u.gender || "", 
+                email: u.email || "unknown@gmail.com",
+                picture: "https://cdn-icons-png.flaticon.com/512/1077/1077114.png",
+                location: {
+                    city: u.location || "unknown",
+                    country: u.location?.split(",")[1]?.trim() || "custom"  
+                },
+                lat: isNaN(lat) ? null : lat,
+                lon: isNaN(lon) ? null : lon,
+                dob: { age: age },
+                isCustom: true
+            };
+        })
+        .filter(u => u.age && u.lat !== null && u.lon !== null); 
 }
+
 
 async function loadRandom() {
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    const filters = JSON.parse(localStorage.getItem("filters")) || {};
-    const workFilter = filters.gender || filters.minAge || filters.maxAge || filters.country;
+    const filters = filterset;
+    const workFilter = filters.gender || filters.minAge || filters.maxAge || filters.country || filters.distance;
     const fetchNumber = workFilter ? 10 : 1;
 
-    let baseUrl = "https://randomuser.me/api";
-    const params = [];
-    if (filters.gender) params.push(`gender=${filters.gender}`);
-    params.push(`results=${fetchNumber}`);
-    const url = `${baseUrl}?${params.join("&")}`;
+    const urlParams = [`results=${fetchNumber}`];
+    if (filters.gender) urlParams.push(`gender=${filters.gender}`);
+    const url = `https://randomuser.me/api/?${urlParams.join("&")}`;
 
     const [res, crudUsers] = await Promise.all([
         fetch(url),
         loadCrudUsers()
     ]);
     const data = await res.json();
-    let candidates = [...data.results, ...crudUsers];
+
+    const randomUsers = data.results.map(u => ({
+        name: `${u.name.first} ${u.name.last}`,
+        age: u.dob.age,
+        gender: u.gender,
+        email: u.email,
+        picture: u.picture.large,
+        lat: parseFloat(u.location.coordinates.latitude),
+        lon: parseFloat(u.location.coordinates.longitude),
+        location: {
+            city: u.location.city,
+            country: u.location.country
+        },
+        dob: u.dob,
+        isCustom: false
+    }));
+
+    let candidates = [...randomUsers, ...crudUsers];
 
     if (workFilter) {
         const min = parseInt(filters.minAge) || 0;
         const max = parseInt(filters.maxAge) || 120;
-        const targetCountry = (filters.country || "").toLowerCase();
+        const distlimit = (filters.distance );
 
         candidates = candidates.filter(user => {
             const age = user.dob.age;
-            const country = (user.location.country || "").toLowerCase();
             const matchAge = age >= min && age <= max;
-            const matchCountry = !targetCountry || country.includes(targetCountry);
-            return matchAge && matchCountry;
+
+            const matchGender = !filters.gender || user.gender===filters.gender;
+            const matchCountry=!filters.country || (user.location.country || "").toLowerCase().includes(filters.country.toLowerCase());
+
+            let matchDistance = true;
+            if (!isNaN(distlimit) && user.lat && user.lon && userLoggedIn.latitude && userLoggedIn.longitude) {
+                const d = haversineDistance(user.lat, user.lon, userLoggedIn.latitude, userLoggedIn.longitude);
+                matchDistance = d <= distlimit;
+                if (matchDistance) {
+                    console.log(` ${user.name}: ${d.toFixed(2)}km`);
+                } else {
+                    console.log(` ${user.name}: ${d.toFixed(2)}km - too far`);
+                }
+            }
+            return matchAge && matchGender && matchCountry && matchDistance;
         });
 
         if (candidates.length === 0) {
@@ -130,6 +219,10 @@ async function loadRandom() {
         ${user.isCustom ? "<span class='badge'>Custom User</span>" : ""}
     `;
 }
+
+document.getElementById("filter-distance").addEventListener("input", (e) => {
+    document.getElementById("distance-value").textContent = e.target.value;
+});
 
 document.getElementById("btn-like").addEventListener("click", () =>{
     saveUserLiked(currentUser);
