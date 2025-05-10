@@ -38,13 +38,68 @@ function showSection(sectionId){
     });
 }
 
+let filterset=JSON.parse(localStorage.getItem("filters")) || {
+    gender:"",
+    minAge:"",
+    maxAge:"",
+    country:"",
+};
+
+document.getElementById("find").addEventListener("click",()=>{
+    filterset.gender=document.getElementById("filter-sex").value;
+    filterset.minAge=document.getElementById("filter-min").value;
+    filterset.maxAge=document.getElementById("filter-max").value;
+    filterset.country=document.getElementById("filter-country").value;
+
+    localStorage.setItem("filters", JSON.stringify(filterset));
+    currentUser=null;
+    loadRandom();
+});
+
 let currentUser = null;
 async function loadRandom(){
     await new Promise((resolve) => setTimeout(resolve,50));
 
-    const res = await fetch ("https://randomuser.me/api/");
+    const filters =JSON.parse(localStorage.getItem("filters")) || {};
+    const workFilter=
+        filters.gender || filters.minAge || filters.maxAge || filters.country;
+    
+    const fetchNumber=workFilter ? 10:1;
+
+    let baseUrl ="https://randomuser.me/api";
+    const params =[];
+    if(filters.gender)params.push(`gender=${filters.gender}`);
+    params.push(`results=${fetchNumber}`);
+    
+    const url=`${baseUrl}?${params.join("&")}`;
+    
+
+    const res = await fetch (url);
     const data = await res.json();
-    const user = data.results[0];
+    let candicates = data.results;
+
+    if (workFilter){
+        candicates=candicates.filter((user)=>{
+            const age =user.dob.age;
+            const country =user.location.country.toLowerCase();
+            const min =parseInt(filters.minAge) || 0;
+            const max=parseInt(filters.maxAge) || 120;
+            const objectiveCountry =(filters.country) || "".toLocaleLowerCase();
+
+            const matchAge=age >= min && age <= max ;
+            const matchCountry=!objectiveCountry || country.includes(objectiveCountry);
+
+            return matchAge && matchCountry;
+
+        });
+        if(candicates.length === 0){
+            document.getElementById("random-card").innerHTML=
+                "<p> No One match with your standars. Try again.</p>";
+            return;
+        }
+    }
+
+    const user=candicates[0];
     currentUser = user;
 
     const usercard = document.getElementById("random-card");
