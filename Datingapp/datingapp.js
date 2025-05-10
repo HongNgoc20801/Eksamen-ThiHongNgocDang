@@ -1,5 +1,7 @@
 import { apiUserUrl } from "../Authentication/AUTH.js";
 import updateUserInformation from "../Request/PUT_info.js";
+
+
 const userLoggedIn=JSON.parse(localStorage.getItem("user"));
 if(!userLoggedIn){
     alert("Please log in to continue using the app.");
@@ -16,7 +18,16 @@ document.getElementById("nav-profile").addEventListener("click",()=>{
     showSection("profile");
     showUserInformation(userLoggedIn);
 });
-document.getElementById("nav-swipe").addEventListener("click",()=> showSection("swipe"));
+
+
+document.getElementById("nav-swipe").addEventListener("click",()=> {
+    showSection("swipe");
+    setTimeout(()=>{
+        if (!currentUser) loadRandom();
+    },100);
+});
+
+
 document.getElementById("nav-liked").addEventListener("click",()=> showSection("liked"));
 
 function showSection(sectionId){
@@ -26,6 +37,37 @@ function showSection(sectionId){
         if (element) element.style.display = id ===sectionId ? "block" :"none";
     });
 }
+
+let currentUser = null;
+async function loadRandom(){
+    await new Promise((resolve) => setTimeout(resolve,50));
+
+    const res = await fetch ("https://randomuser.me/api/");
+    const data = await res.json();
+    const user = data.results[0];
+    currentUser = user;
+
+    const usercard = document.getElementById("random-card");
+    usercard.innerHTML = `
+        <img src ="${user.picture.large}" alt="User-Photo" style="border-radius:40%; width:100px;">
+        <h4>${user.name.first} ${user.name.last}</h4>
+        <p>Email: ${user.email}</p>
+        <p>Age: ${user.dob.age}</p>
+        <p>Location: ${user.location.city}, ${user.location.country}</p>
+    `;
+}
+
+document.getElementById("btn-like").addEventListener("click", () =>{
+    saveUserLiked(currentUser);
+    currentUser =null;
+    loadRandom();
+});
+
+document.getElementById("btn-dislike").addEventListener("click", ()=>{
+    currentUser=null;
+    loadRandom();
+});
+
 //showUserinformation
 function showUserInformation(user){
     const informationDiv = document.getElementById("section-profile");
