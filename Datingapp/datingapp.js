@@ -1,6 +1,7 @@
 import { apiUserUrl } from "../Authentication/AUTH.js";
+import deleteCrudUser from "../Request/DELETE_user.js";
 import getCrudUsers from "../Request/GET_user.js";
-import updateUserInformation from "../Request/PUT_info.js";
+import updateUser from "../Request/PUT_info.js";
 
 
 const userLoggedIn=JSON.parse(localStorage.getItem("user"));
@@ -164,8 +165,7 @@ function showUserInformation(user){
         const confirmDelete = confirm("Do you really want to do it? ");
         if(!confirmDelete)return;
         try{
-            const url=`${apiUserUrl}/${user._id}`;
-            await axios.delete(url);
+            await deleteCrudUser(user._id);
             localStorage.removeItem("user");
             alert("Successfully!");
             window.location.href="/Login/login.html";
@@ -212,7 +212,7 @@ function showEditForm(user) {
     }
 
     try {
-            await updateUserInformation(user._id, updatedUser);
+            await updateUser(user._id, updatedUser);
             const updatedWithId = { ...updatedUser, _id: user._id };
             localStorage.setItem("user", JSON.stringify(updatedWithId));
             document.getElementById("information-user").innerHTML = `
