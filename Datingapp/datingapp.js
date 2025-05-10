@@ -76,6 +76,7 @@ function showUserInformation(user){
         <p><strong>Username:</strong> ${user.name}</p>
         <p><strong>Password:</strong> ${"*".repeat(user.password.length)}</p>
         <p><strong>Age:</strong> ${user.age || "Not set"}</p>
+        <p><strong>Location:</strong> ${user.location || "Not set"}</p>
         <p><strong>Bio:</strong> ${user.bio || "Not Bio set"}</p>
         <br>
         <button id="edit-profile-btn" style="margin-top:1.2rem; background-color:#46a2da; color:white; border-radius:5px;">Edit Profile</button>
@@ -110,6 +111,7 @@ function showEditForm(user) {
         <input type="text" id="edit-username" value="${user.name}" required/>
         <input type="password" id="edit-password" value="${user.password}" required/>
         <input type="number" id="edit-age" value="${user.age || ''}" placeholder="Age" />
+        <input type="text" id="edit-location" value="${user.location || ''}" placeholder="Location"/>
         <textarea id="edit-bio" placeholder=" write something to let people know more about you">${user.bio || ''}</textarea>
 
         <br/>
@@ -123,6 +125,7 @@ function showEditForm(user) {
       name: document.getElementById("edit-username").value,
       password: document.getElementById("edit-password").value,
       age:document.getElementById("edit-age").value,
+      location:document.getElementById("edit-location").value,
       bio:document.getElementById("edit-bio").value,
 
     };
