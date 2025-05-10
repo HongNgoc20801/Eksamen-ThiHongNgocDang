@@ -1,4 +1,3 @@
-import{apiUserUrl} from "../Authentication/AUTH.js";
 import createUser from "../Request/POST_user.js";
 
 document.getElementById("register-form").addEventListener("submit", async (e) => {

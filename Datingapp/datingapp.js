@@ -1,4 +1,3 @@
-import { apiUserUrl } from "../Authentication/AUTH.js";
 import deleteCrudUser from "../Request/DELETE_user.js";
 import getCrudUsers from "../Request/GET_user.js";
 import updateUser from "../Request/PUT_info.js";
@@ -90,7 +89,6 @@ document.getElementById("find").addEventListener("click",()=>{
     filterset.gender=document.getElementById("filter-sex").value;
     filterset.minAge=document.getElementById("filter-min").value;
     filterset.maxAge=document.getElementById("filter-max").value;
-    filterset.country=document.getElementById("filter-country").value;
     filterset.distance = document.getElementById("filter-distance").value; 
 
     currentUser=null;
@@ -185,7 +183,6 @@ async function loadRandom() {
             const matchAge = age >= min && age <= max;
 
             const matchGender = !filters.gender || user.gender===filters.gender;
-            const matchCountry=!filters.country || (user.location.country || "").toLowerCase().includes(filters.country.toLowerCase());
 
             let matchDistance = true;
             if (!isNaN(distlimit) && user.lat && user.lon && userLoggedIn.latitude && userLoggedIn.longitude) {
@@ -197,7 +194,7 @@ async function loadRandom() {
                     console.log(` ${user.name}: ${d.toFixed(2)}km - too far`);
                 }
             }
-            return matchAge && matchGender && matchCountry && matchDistance;
+            return matchAge && matchGender && matchDistance;
         });
 
         if (candidates.length === 0) {
