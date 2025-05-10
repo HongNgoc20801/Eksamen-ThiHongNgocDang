@@ -24,6 +24,7 @@ document.getElementById("nav-profile").addEventListener("click",()=>{
 document.getElementById("nav-swipe").addEventListener("click", () => {
     showSection("swipe");
     navigator.geolocation.getCurrentPosition(async (position) => {
+        const user = JSON.parse(localStorage.getItem("user"));
         const latitude = parseFloat(position.coords.latitude.toFixed(6));
         const longitude = parseFloat(position.coords.longitude.toFixed(6));
 
@@ -31,16 +32,16 @@ document.getElementById("nav-swipe").addEventListener("click", () => {
             const updatedUser = {
                 name: userLoggedIn.name,
                 password: userLoggedIn.password,
-                email: userLoggedIn.email || "",
-                age: userLoggedIn.age || "",
-                location: userLoggedIn.location || "",
-                bio: userLoggedIn.bio || "",
+                email: user.email || "",
+                age: user.age || "",
+                location: user.location || "",
+                bio: user.bio || "",
                 latitude,
                 longitude
             };
 
-            await updateUser(userLoggedIn._id, updatedUser);
-            const updatedWithId = { ...updatedUser, _id: userLoggedIn._id };
+            await updateUser(user._id, updatedUser);
+            const updatedWithId = { ...updatedUser, _id: user._id };
             localStorage.setItem("user", JSON.stringify(updatedWithId)); 
             console.log(" Location updated:", latitude, longitude);
             setTimeout(() => {
@@ -241,8 +242,8 @@ function showUserInformation(user){
     informationDiv.innerHTML=`
         <h3> Your Profile </h3>
         <p><strong>Username:</strong> ${user.name}</p>
-        <p><strong>Email:</strong> ${user.email || "Not set"}</p> 
         <p><strong>Password:</strong> ${"*".repeat(user.password.length)}</p>
+        <p><strong>Email:</strong> ${user.email || "Not set"}</p> 
         <p><strong>Age:</strong> ${user.age || "Not set"}</p>
         <p><strong>Location:</strong> ${user.location || "Not set"}</p>
         <p><strong>Bio:</strong> ${user.bio || "Not Bio set"}</p>
