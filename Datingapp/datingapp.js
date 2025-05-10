@@ -1,3 +1,4 @@
+import { apiUserUrl } from "../Authentication/AUTH.js";
 import updateUserInformation from "../Request/PUT_info.js";
 const userLoggedIn=JSON.parse(localStorage.getItem("user"));
 if(!userLoggedIn){
@@ -35,12 +36,27 @@ function showUserInformation(user){
         <p><strong>Age:</strong> ${user.age || "Not set"}</p>
         <p><strong>Bio:</strong> ${user.bio || "Not Bio set"}</p>
         <br>
-        <button id="edit-profile-btn">Edit Profile</button>
+        <button id="edit-profile-btn" style="margin-top:1.2rem; background-color:#46a2da; color:white; border-radius:5px;">Edit Profile</button>
+        <button id="delete-user-btn" style="margin-top:1.2rem; background-color:red; color:white; border-radius:5px;">Delete My Account</button>
     
     `;
 
     document.getElementById("edit-profile-btn").addEventListener("click",()=>{
         showEditForm(user);
+    });
+    document.getElementById("delete-user-btn").addEventListener("click",async()=>{
+        const confirmDelete = confirm("Do you really want to do it? ");
+        if(!confirmDelete)return;
+        try{
+            const url=`${apiUserUrl}/${user._id}`;
+            await axios.delete(url);
+            localStorage.removeItem("user");
+            alert("Successfully!");
+            window.location.href="/Login/login.html";
+        }catch(err){
+            alert("Unsuccess to delete account!");
+            console.error(err);
+        }
     });
 }
 
