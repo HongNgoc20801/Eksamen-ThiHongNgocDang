@@ -241,6 +241,7 @@ function showUserInformation(user){
     informationDiv.innerHTML=`
         <h3> Your Profile </h3>
         <p><strong>Username:</strong> ${user.name}</p>
+        <p><strong>Email:</strong> ${user.email || "Not set"}</p> 
         <p><strong>Password:</strong> ${"*".repeat(user.password.length)}</p>
         <p><strong>Age:</strong> ${user.age || "Not set"}</p>
         <p><strong>Location:</strong> ${user.location || "Not set"}</p>
@@ -275,6 +276,7 @@ function showEditForm(user) {
     <h3>Edit Profile</h3>
     <form id="edit-profile-form">
         <input type="text" id="edit-username" value="${user.name}" required/>
+        <input type="email" id="edit-email" value="${user.email || ''}" placeholder="Email" required/> 
         <input type="password" id="edit-password" value="${user.password}" required/>
         <input type="number" id="edit-age" value="${user.age || ''}" placeholder="Age" />
         <input type="text" id="edit-location" value="${user.location || ''}" placeholder="Location"/>
@@ -289,6 +291,7 @@ function showEditForm(user) {
     e.preventDefault();
     const updatedUser = {
       name: document.getElementById("edit-username").value,
+      email: document.getElementById("edit-email").value,
       password: document.getElementById("edit-password").value,
       age:document.getElementById("edit-age").value,
       location:document.getElementById("edit-location").value,
