@@ -205,10 +205,13 @@ async function loadRandom() {
                 "<p>No one matches your standards. Try again.</p>";
             return;
         }
+        
     }
 
-    const user = candidates[0];
+    const randomIndex = Math.floor(Math.random() * candidates.length);
+    const user = candidates[randomIndex];
     currentUser = user;
+
 
     document.getElementById("random-card").innerHTML = `
         <img src="${user.picture.large || user.picture}" alt="User-Photo" style="border-radius: 50%; width: 100px;">
