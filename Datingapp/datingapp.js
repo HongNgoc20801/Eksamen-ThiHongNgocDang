@@ -5,6 +5,7 @@ import updateUser from "../Request/PUT_info.js";
 let currentUser = null;
 let filteredCandidates = [];
 
+
 const userLoggedIn=JSON.parse(localStorage.getItem("user"));
 if(!userLoggedIn){
     alert("Please log in to continue using the app.");
@@ -91,6 +92,7 @@ async function loadCrudUsers() {
 
     return crudUsers
         .filter(u => u._id !== userLoggedIn._id)
+
         .map(u => {
             
             const age = parseInt(u.age);
@@ -106,7 +108,7 @@ async function loadCrudUsers() {
                     country: u.location?.split(",")[1]?.trim() || "custom"  
                 },
                 
-                dob: { age: age },
+                dob: { age},
                 isCustom: true
             };
         })
@@ -137,7 +139,7 @@ async function loadRandom() {
         (filters.gender && filters.gender !== "") ||
         (filters.minAge && filters.minAge.trim() !== "") ||
         (filters.maxAge && filters.maxAge.trim() !== "");
-    const fetchNumber = workFilter ? 10 : 1;
+    const fetchNumber = 10 ;
 
     const urlParams = [`results=${fetchNumber}`];
     if (filters.gender && filters.gender !== "") urlParams.push(`gender=${filters.gender}`);
@@ -148,6 +150,10 @@ async function loadRandom() {
         loadCrudUsers()
     ]);
     const data = await res.json();
+
+    const userKey = userLoggedIn.email || userLoggedIn._id;
+    const dislikedGeneral = JSON.parse(localStorage.getItem(`dislikedGeneral_${userKey}`)) || [];
+    const dislikedFiltered = JSON.parse(localStorage.getItem(`dislikedFiltered_${userKey}`)) || [];
 
     const randomUsers = data.results.map(u => ({
         name: `${u.name.first} ${u.name.last}`,
@@ -164,19 +170,31 @@ async function loadRandom() {
     }));
 
     let candidates = [...randomUsers, ...crudUsers];
+    console.log("📌 Raw candidate ages:");
+    candidates.forEach(u => {
+        console.log(`${u.name} - typeof age:`, typeof u.dob.age, "| value:", u.dob.age);
+    });
+    candidates.forEach(u => {
+        u.dob.age = parseInt(u.dob.age);
+    });
+
+
 
     if (workFilter){
         const min = filters.minAge ? parseInt(filters.minAge) : null;
         const max = filters.maxAge ? parseInt(filters.maxAge) : null;
 
         candidates = candidates.filter(user => {
-            const age = user.dob.age;
+            const age = Number(user.dob.age);
             const matchAge = (!min || age >= min) && (!max || age <= max);
             const matchGender = !filters.gender || user.gender === filters.gender;
-            return matchAge && matchGender;
+
+            const key = `${user.name}|${user.dob.age}|${user.email}`;
+            const notDisliked = !dislikedFiltered.includes(key);
+            return matchAge && matchGender && notDisliked;
         });
 
-        console.log("✅ Users after filtering:", candidates.map(u => ({
+        console.log("Users after filtering:", candidates.map(u => ({
             name: u.name,
             age: u.dob.age,
             gender: u.gender,
@@ -184,19 +202,26 @@ async function loadRandom() {
             location: `${u.location.city}, ${u.location.country}`,
             from: u.isCustom ? "custom" : "random"
         })));
+        filteredCandidates = candidates;
+        showUser(filteredCandidates.shift());
     } else {
-        console.log("🎲 No filter applied. Showing random user(s):", candidates.map(u => ({
-            name: u.name,
-            age: u.dob.age,
-            gender: u.gender,
-            email: u.email,
-            location: `${u.location.city}, ${u.location.country}`,
-            from: u.isCustom ? "custom" : "random"
-        })));
+        const available = candidates.filter(user => {
+            const key = `${user.name}|${user.dob.age}|${user.email}`;
+            return !dislikedGeneral.includes(key);
+        });
 
-    } 
-    filteredCandidates = candidates;
-    showUser(filteredCandidates.shift());
+        if (available.length === 0) {
+            document.getElementById("random-card").innerHTML = "<p>No more matches. Try changing your filters.</p>";
+            return;
+        }
+
+        filteredCandidates = [...available]; 
+        const picked = filteredCandidates.shift();
+
+        console.log(" No filter applied. Showing single random user:", picked);
+        showUser(picked);
+    }
+    
 
 }
 
@@ -207,10 +232,35 @@ document.getElementById("btn-like").addEventListener("click", () =>{
     loadRandom();
 });
 
-document.getElementById("btn-dislike").addEventListener("click", ()=>{
-    currentUser=null;
-    showUser(filteredCandidates.shift());
+document.getElementById("btn-dislike").addEventListener("click", () => {
+    if (currentUser) {
+        const key = `${currentUser.name}|${currentUser.dob.age}|${currentUser.email}`;
+        const usingFilter =
+            (filterset.gender && filterset.gender !== "") ||
+            (filterset.minAge && filterset.minAge.trim() !== "") ||
+            (filterset.maxAge && filterset.maxAge.trim() !== "");
+
+        const userKey = userLoggedIn.email || userLoggedIn._id;
+        const listKey = usingFilter ? `dislikedFiltered_${userKey}` : `dislikedGeneral_${userKey}`;
+        const list = JSON.parse(localStorage.getItem(listKey)) || [];
+
+        if (!list.includes(key)) {
+            list.push(key);
+            localStorage.setItem(listKey, JSON.stringify(list));
+        }
+    }
+
+    currentUser = null;
+
+    if (filteredCandidates.length > 0) {
+        showUser(filteredCandidates.shift());
+    } else {
+        loadRandom(); 
+    }
 });
+
+
+
 
 //showUserinformation
 function showUserInformation(user){

@@ -38,3 +38,115 @@ section {
     max-width: 600px;
     margin:auto;
 }
+#section-profile {
+    text-align: left;
+    background: #fff0f6;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    max-width: 600px;
+    margin: auto;
+}
+
+#section-profile h3 {
+    font-size: 1.8rem;
+    color: #d63384;
+    margin-bottom: 1.2rem;
+    text-align: center;
+}
+
+#section-profile p {
+    font-size: 1.1rem;
+    margin: 0.8rem 0;
+    padding: 0.8rem 1rem;
+    background: #ffe3f0;
+    border-radius: 12px;
+    color: #333;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+#section-profile strong {
+    display: inline-block;
+    width: 130px;
+    color: #555;
+}
+
+#section-profile button {
+    padding: 0.7rem 1.5rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 10px;
+    margin: 1rem 0.5rem 0 0;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+#edit-profile-btn {
+    background: linear-gradient(to right, #87adf9, #404dff);
+    color: white;
+}
+
+#edit-profile-btn:hover {
+    background: linear-gradient(to right, #4d8eff, #003de6);
+}
+
+#delete-user-btn {
+    background: linear-gradient(to right, #ff5252, #ff1744);
+    color: white;
+}
+
+#delete-user-btn:hover {
+    background: linear-gradient(to right, #e60000, #b30000);
+}
+
+#edit-profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+#edit-profile-form input,
+#edit-profile-form select,
+#edit-profile-form textarea {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background-color: #fff;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    transition: border-color 0.3s ease;
+}
+
+#edit-profile-form input:focus,
+#edit-profile-form select:focus,
+#edit-profile-form textarea:focus {
+    border-color: #ff69b4;
+    outline: none;
+}
+
+#edit-profile-form textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+#edit-profile-form button[type="submit"] {
+    align-self: flex-start;
+    background: linear-gradient(to right, #f48fb1, #ec407a);
+    color: white;
+    padding: 0.8rem 1.6rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+#edit-profile-form button[type="submit"]:hover {
+    background: linear-gradient(to right, #ec407a, #d81b60);
+}
+
