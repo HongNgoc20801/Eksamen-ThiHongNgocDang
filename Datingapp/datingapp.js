@@ -58,6 +58,13 @@ document.getElementById("nav-swipe").addEventListener("click", async() => {
 
 document.getElementById("nav-liked").addEventListener("click",()=> showSection("liked"));
 
+document.getElementById("logout-btn").addEventListener("click", () => {
+    localStorage.removeItem("user");
+    alert("Logged out.");
+    window.location.href = "/Login/login.html"; 
+});
+
+
 function showSection(sectionId){
     const section =["home", "profile", "swipe", "liked"];
     section.forEach((id)=> {
@@ -170,7 +177,7 @@ async function loadRandom() {
     }));
 
     let candidates = [...randomUsers, ...crudUsers];
-    console.log("📌 Raw candidate ages:");
+    console.log(" Raw candidate ages:");
     candidates.forEach(u => {
         console.log(`${u.name} - typeof age:`, typeof u.dob.age, "| value:", u.dob.age);
     });

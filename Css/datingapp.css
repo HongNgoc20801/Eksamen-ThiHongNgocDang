@@ -150,3 +150,123 @@ section {
     background: linear-gradient(to right, #ec407a, #d81b60);
 }
 
+/* Bộ lọc (giới tính + tuổi + nút) */
+#filter-sex,
+#filter-min,
+#filter-max,
+#find {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  font-size: 14px;
+  margin: 6px 4px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+#filter-sex:focus,
+#filter-min:focus,
+#filter-max:focus {
+  border-color: #ff66aa;
+  box-shadow: 0 0 5px rgba(255, 102, 170, 0.5);
+}
+
+#find {
+  background-color: #ff66aa;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+}
+
+#find:hover {
+  background-color: #e44c96;
+  box-shadow: 0 4px 10px rgba(255, 102, 170, 0.3);
+}
+
+/* Nhóm filter nằm cùng hàng và responsive */
+#section-swipe {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#section-swipe > * {
+  margin-bottom: 1rem;
+}
+
+/* Định dạng lại form filter thành hàng ngang khi đủ rộng */
+@media (min-width: 600px) {
+  #section-swipe > *:first-child {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  #section-swipe select,
+  #section-swipe input,
+  #section-swipe button {
+    margin: 5px;
+  }
+}
+
+/* Thẻ random user */
+#random-card {
+  padding: 2rem;
+  background: rgb(251, 220, 241);
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 90%;
+  margin: 0 auto;
+  transition: all 0.3s ease;
+}
+
+#random-card img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+  border: 4px solid #f68dd6;
+}
+
+#random-card h4 {
+  color: #c91c70;
+  font-size: 1.6rem;
+  margin-bottom: 0.5rem;
+}
+
+#random-card p {
+  margin: 5px 0;
+  color: #444;
+  font-size: 15px;
+}
+
+#btn-like,
+#btn-dislike {
+  padding: 10px 18px;
+  margin: 1rem 8px;
+  border: none;
+  border-radius: 30px;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#btn-like {
+  background-color: #fa0404;
+  color: white;
+}
+
+#btn-dislike {
+  background-color: #433d3d;
+  color: white;
+}
+
+#btn-like:hover,
+#btn-dislike:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
