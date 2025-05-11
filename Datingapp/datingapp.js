@@ -2,6 +2,8 @@ import deleteCrudUser from "../Request/DELETE_user.js";
 import getCrudUsers from "../Request/GET_user.js";
 import updateUser from "../Request/PUT_info.js";
 
+let currentUser = null;
+let filteredCandidates = [];
 
 const userLoggedIn=JSON.parse(localStorage.getItem("user"));
 if(!userLoggedIn){
@@ -21,40 +23,35 @@ document.getElementById("nav-profile").addEventListener("click",()=>{
 });
 
 
-document.getElementById("nav-swipe").addEventListener("click", () => {
+document.getElementById("nav-swipe").addEventListener("click", async() => {
     showSection("swipe");
-    navigator.geolocation.getCurrentPosition(async (position) => {
-        const user = JSON.parse(localStorage.getItem("user"));
-        const latitude = parseFloat(position.coords.latitude.toFixed(6));
-        const longitude = parseFloat(position.coords.longitude.toFixed(6));
+    const user = JSON.parse(localStorage.getItem("user"));
+        
 
-        try {
-            const updatedUser = {
-                name: userLoggedIn.name,
-                password: userLoggedIn.password,
-                email: user.email || "",
-                age: user.age || "",
-                location: user.location || "",
-                bio: user.bio || "",
-                latitude,
-                longitude
-            };
+    try {
+        const updatedUser = {
+            name: user.name,
+            password: user.password,
+            email: user.email || "",
+            age: user.age || "",
+            gender: user.gender || "",
+            location: user.location || "",
+            bio: user.bio || "",
+                
+        };
 
-            await updateUser(user._id, updatedUser);
-            const updatedWithId = { ...updatedUser, _id: user._id };
-            localStorage.setItem("user", JSON.stringify(updatedWithId)); 
-            console.log(" Location updated:", latitude, longitude);
-            setTimeout(() => {
-                loadRandom();
-            }, 200);
-        } catch (err) {
-            console.error(" Failed to update location", err);
-            document.getElementById("random-card").innerHTML = "<p>Could not update location.</p>";
-        }
-    }, (error) => {
-        console.warn(" Location access denied or failed", error);
-        loadRandom(); 
-    });
+        await updateUser(user._id, updatedUser);
+        const updatedWithId = { ...updatedUser, _id: user._id };
+        localStorage.setItem("user", JSON.stringify(updatedWithId)); 
+        Object.assign(userLoggedIn, updatedWithId);
+
+        setTimeout(() => {
+            loadRandom();
+        }, 200);
+    } catch (err) {
+        console.error(" Failed to update user info", err);
+        document.getElementById("random-card").innerHTML = "<p>Could not update profile.</p>";
+    }
 });
 
 
@@ -72,42 +69,22 @@ let filterset=JSON.parse(localStorage.getItem("filters")) || {
     gender:"",
     minAge:"",
     maxAge:"",
-    country:"",
-    distance:""
 };
-const distanceSlider = document.getElementById("filter-distance");
-const distanceLabel = document.getElementById("distance-value");
 
-if (filterset.distance) {
-    distanceSlider.value = filterset.distance;
-    distanceLabel.textContent = filterset.distance;
-} else {
-    filterset.distance = distanceSlider.value;
-    distanceLabel.textContent = distanceSlider.value;
-}
+
+
 
 document.getElementById("find").addEventListener("click",()=>{
     filterset.gender=document.getElementById("filter-sex").value;
     filterset.minAge=document.getElementById("filter-min").value;
     filterset.maxAge=document.getElementById("filter-max").value;
-    filterset.distance = document.getElementById("filter-distance").value; 
 
     currentUser=null;
     loadRandom();
 });
 
-function haversineDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) ** 2 +
-              Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
-              Math.sin(dLon/2) ** 2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-}
 
-let currentUser = null;
+
 
 async function loadCrudUsers() {
     const crudUsers = await getCrudUsers();
@@ -115,8 +92,7 @@ async function loadCrudUsers() {
     return crudUsers
         .filter(u => u._id !== userLoggedIn._id)
         .map(u => {
-            const lat = parseFloat(u.latitude);
-            const lon = parseFloat(u.longitude);
+            
             const age = parseInt(u.age);
 
             return {
@@ -129,25 +105,42 @@ async function loadCrudUsers() {
                     city: u.location || "unknown",
                     country: u.location?.split(",")[1]?.trim() || "custom"  
                 },
-                lat: isNaN(lat) ? null : lat,
-                lon: isNaN(lon) ? null : lon,
+                
                 dob: { age: age },
                 isCustom: true
             };
         })
-        .filter(u => u.age && u.lat !== null && u.lon !== null); 
+        .filter(u => u.age && u.gender); 
 }
 
-
+function showUser(user) {
+    if (!user) {
+        document.getElementById("random-card").innerHTML =
+            "<p>No more matches. Try changing your filters.</p>";
+        return;
+    }
+    currentUser = user;
+    document.getElementById("random-card").innerHTML = `
+        <img src="${user.picture.large || user.picture}" alt="User-Photo" style="border-radius: 50%; width: 100px;">
+        <h4>${user.name.first || user.name}</h4>
+        <p>Email: ${user.email}</p>
+        <p>Age: ${user.dob.age}</p>
+        <p>Location: ${user.location.city}, ${user.location.country}</p>
+        ${user.isCustom ? "<span class='badge'>Custom User</span>" : ""}
+    `;
+}
 async function loadRandom() {
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     const filters = filterset;
-    const workFilter = filters.gender || filters.minAge || filters.maxAge || filters.country || filters.distance;
+    const workFilter = 
+        (filters.gender && filters.gender !== "") ||
+        (filters.minAge && filters.minAge.trim() !== "") ||
+        (filters.maxAge && filters.maxAge.trim() !== "");
     const fetchNumber = workFilter ? 10 : 1;
 
     const urlParams = [`results=${fetchNumber}`];
-    if (filters.gender) urlParams.push(`gender=${filters.gender}`);
+    if (filters.gender && filters.gender !== "") urlParams.push(`gender=${filters.gender}`);
     const url = `https://randomuser.me/api/?${urlParams.join("&")}`;
 
     const [res, crudUsers] = await Promise.all([
@@ -162,8 +155,6 @@ async function loadRandom() {
         gender: u.gender,
         email: u.email,
         picture: u.picture.large,
-        lat: parseFloat(u.location.coordinates.latitude),
-        lon: parseFloat(u.location.coordinates.longitude),
         location: {
             city: u.location.city,
             country: u.location.country
@@ -174,56 +165,41 @@ async function loadRandom() {
 
     let candidates = [...randomUsers, ...crudUsers];
 
-    if (workFilter) {
-        const min = parseInt(filters.minAge) || 0;
-        const max = parseInt(filters.maxAge) || 120;
-        const distlimit = (filters.distance );
+    if (workFilter){
+        const min = filters.minAge ? parseInt(filters.minAge) : null;
+        const max = filters.maxAge ? parseInt(filters.maxAge) : null;
 
         candidates = candidates.filter(user => {
             const age = user.dob.age;
-            const matchAge = age >= min && age <= max;
-
-            const matchGender = !filters.gender || user.gender===filters.gender;
-
-            let matchDistance = true;
-            if (!isNaN(distlimit) && user.lat && user.lon && userLoggedIn.latitude && userLoggedIn.longitude) {
-                const d = haversineDistance(user.lat, user.lon, userLoggedIn.latitude, userLoggedIn.longitude);
-                matchDistance = d <= distlimit;
-                if (matchDistance) {
-                    console.log(` ${user.name}: ${d.toFixed(2)}km`);
-                } else {
-                    console.log(` ${user.name}: ${d.toFixed(2)}km - too far`);
-                }
-            }
-            return matchAge && matchGender && matchDistance;
+            const matchAge = (!min || age >= min) && (!max || age <= max);
+            const matchGender = !filters.gender || user.gender === filters.gender;
+            return matchAge && matchGender;
         });
 
-        if (candidates.length === 0) {
-            document.getElementById("random-card").innerHTML =
-                "<p>No one matches your standards. Try again.</p>";
-            return;
-        }
-        
-    }
+        console.log("✅ Users after filtering:", candidates.map(u => ({
+            name: u.name,
+            age: u.dob.age,
+            gender: u.gender,
+            email: u.email,
+            location: `${u.location.city}, ${u.location.country}`,
+            from: u.isCustom ? "custom" : "random"
+        })));
+    } else {
+        console.log("🎲 No filter applied. Showing random user(s):", candidates.map(u => ({
+            name: u.name,
+            age: u.dob.age,
+            gender: u.gender,
+            email: u.email,
+            location: `${u.location.city}, ${u.location.country}`,
+            from: u.isCustom ? "custom" : "random"
+        })));
 
-    const randomIndex = Math.floor(Math.random() * candidates.length);
-    const user = candidates[randomIndex];
-    currentUser = user;
+    } 
+    filteredCandidates = candidates;
+    showUser(filteredCandidates.shift());
 
-
-    document.getElementById("random-card").innerHTML = `
-        <img src="${user.picture.large || user.picture}" alt="User-Photo" style="border-radius: 50%; width: 100px;">
-        <h4>${user.name.first || user.name}</h4>
-        <p>Email: ${user.email}</p>
-        <p>Age: ${user.dob.age}</p>
-        <p>Location: ${user.location.city}, ${user.location.country}</p>
-        ${user.isCustom ? "<span class='badge'>Custom User</span>" : ""}
-    `;
 }
 
-document.getElementById("filter-distance").addEventListener("input", (e) => {
-    document.getElementById("distance-value").textContent = e.target.value;
-});
 
 document.getElementById("btn-like").addEventListener("click", () =>{
     saveUserLiked(currentUser);
@@ -233,7 +209,7 @@ document.getElementById("btn-like").addEventListener("click", () =>{
 
 document.getElementById("btn-dislike").addEventListener("click", ()=>{
     currentUser=null;
-    loadRandom();
+    showUser(filteredCandidates.shift());
 });
 
 //showUserinformation
@@ -245,6 +221,7 @@ function showUserInformation(user){
         <p><strong>Password:</strong> ${"*".repeat(user.password.length)}</p>
         <p><strong>Email:</strong> ${user.email || "Not set"}</p> 
         <p><strong>Age:</strong> ${user.age || "Not set"}</p>
+        <p><strong>Gender:</strong> ${user.gender || "Not set"}</p>
         <p><strong>Location:</strong> ${user.location || "Not set"}</p>
         <p><strong>Bio:</strong> ${user.bio || "Not Bio set"}</p>
         <br>
@@ -280,6 +257,11 @@ function showEditForm(user) {
         <input type="email" id="edit-email" value="${user.email || ''}" placeholder="Email" required/> 
         <input type="password" id="edit-password" value="${user.password}" required/>
         <input type="number" id="edit-age" value="${user.age || ''}" placeholder="Age" />
+        <select id="edit-gender">
+            <option value="">Select gender</option>
+            <option value="male" ${user.gender === "male" ? "selected" : ""}>Male</option>
+            <option value="female" ${user.gender === "female" ? "selected" : ""}>Female</option>
+        </select>
         <input type="text" id="edit-location" value="${user.location || ''}" placeholder="Location"/>
         <textarea id="edit-bio" placeholder=" write something to let people know more about you">${user.bio || ''}</textarea>
 
@@ -295,6 +277,7 @@ function showEditForm(user) {
       email: document.getElementById("edit-email").value,
       password: document.getElementById("edit-password").value,
       age:document.getElementById("edit-age").value,
+      gender: document.getElementById("edit-gender").value,
       location:document.getElementById("edit-location").value,
       bio:document.getElementById("edit-bio").value,
 
@@ -312,6 +295,8 @@ function showEditForm(user) {
             await updateUser(user._id, updatedUser);
             const updatedWithId = { ...updatedUser, _id: user._id };
             localStorage.setItem("user", JSON.stringify(updatedWithId));
+
+            Object.assign(userLoggedIn, updatedWithId);
             document.getElementById("information-user").innerHTML = `
                 <p>Welcome, <strong>${updatedWithId.name}</strong></p>
             `;
