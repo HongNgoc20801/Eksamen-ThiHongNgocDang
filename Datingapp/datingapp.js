@@ -1,21 +1,54 @@
 import deleteCrudUser from "../Request/DELETE_user.js";
 import getCrudUsers from "../Request/GET_user.js";
 import updateUser from "../Request/PUT_info.js";
+import postFilter from "../Request/POST_filter.js";
+import getFilter from "../Request/GET_filter.js";
+import putFilter from "../Request/PUT_filter.js";
 
 let currentUser = null;
 let filteredCandidates = [];
+let filterset = { gender: "", minAge: "", maxAge: "" }; 
 
 
-const userLoggedIn=JSON.parse(localStorage.getItem("user"));
-if(!userLoggedIn){
+const userLoggedIn = JSON.parse(localStorage.getItem("user"));
+
+if (!userLoggedIn) {
     alert("Please log in to continue using the app.");
-    window.location.href="/Login/login.html";
-}else{
-    document.getElementById("information-user").innerHTML = `
-    <p>Welcome to Dating App, where you can connnect with the other even how far it is, <strong>${userLoggedIn.name}</strong>!</p>
-    `;
-    showSection("home")
-} 
+    window.location.href = "/Login/login.html";
+} else {
+    document.addEventListener("DOMContentLoaded", async () => {
+        await loadUserFilter();
+        document.getElementById("information-user").innerHTML = `
+            <p>Welcome to Dating App, where you can connect with others, <strong>${userLoggedIn.name}</strong>!</p>
+        `;
+        showSection("home");
+    });
+}
+
+async function loadUserFilter() {
+    try {
+        const data = await getFilter();
+        if (!Array.isArray(data)) {
+            console.warn("[GET_filter] Response is not an array:", data);
+            return;
+        }
+
+        const userFilter = data.find(item => item.userId === userLoggedIn._id);
+        if (userFilter) {
+            filterset = userFilter;
+            userLoggedIn._filterId = userFilter._id;
+            localStorage.setItem("user", JSON.stringify(userLoggedIn));
+            console.log("[GET_filter] Loaded saved filter:", userFilter);
+
+            document.getElementById("filter-sex").value = filterset.gender || "";
+            document.getElementById("filter-min").value = filterset.minAge || "";
+            document.getElementById("filter-max").value = filterset.maxAge || "";
+        }
+    } catch (err) {
+        console.error("[GET_filter] Failed to load filter", err);
+    }
+}
+
 //Nav  
 document.getElementById("nav-home").addEventListener("click",()=>showSection("home"));
 document.getElementById("nav-profile").addEventListener("click",()=>{
@@ -26,33 +59,41 @@ document.getElementById("nav-profile").addEventListener("click",()=>{
 
 document.getElementById("nav-swipe").addEventListener("click", async() => {
     showSection("swipe");
-    const user = JSON.parse(localStorage.getItem("user"));
-        
-
-    try {
-        const updatedUser = {
-            name: user.name,
-            password: user.password,
-            email: user.email || "",
-            age: user.age || "",
-            gender: user.gender || "",
-            location: user.location || "",
-            bio: user.bio || "",
+    if (!currentUser && filteredCandidates.length === 0) {
+        try {
+            const user = JSON.parse(localStorage.getItem("user"));
+            const updatedUser = {
+                name: user.name,
+                password: user.password,
+                email: user.email || "",
+                age: user.age || "",
+                gender: user.gender || "",
+                location: user.location || "",
+                bio: user.bio || "",
                 
-        };
+            };
 
-        await updateUser(user._id, updatedUser);
-        const updatedWithId = { ...updatedUser, _id: user._id };
-        localStorage.setItem("user", JSON.stringify(updatedWithId)); 
-        Object.assign(userLoggedIn, updatedWithId);
+            await updateUser(user._id, updatedUser);
+            const updatedWithId = { ...updatedUser, _id: user._id };
+            localStorage.setItem("user", JSON.stringify(updatedWithId)); 
+            Object.assign(userLoggedIn, updatedWithId);
 
-        setTimeout(() => {
-            loadRandom();
-        }, 200);
-    } catch (err) {
-        console.error(" Failed to update user info", err);
-        document.getElementById("random-card").innerHTML = "<p>Could not update profile.</p>";
+            setTimeout(() => {
+                loadRandom();
+            }, 200);
+        } catch (err) {
+            console.error(" Failed to update user info", err);
+            document.getElementById("random-card").innerHTML = "<p>Could not update profile.</p>";
+        }
+    }else if (currentUser){
+        showUser(currentUser);
+    }else if (filteredCandidates.length > 0){
+        currentUser = filteredCandidates[0];
+        showUser(currentUser);
+    }else{
+        loadRandom();
     }
+    
 });
 
 
@@ -73,23 +114,41 @@ function showSection(sectionId){
     });
 }
 
-let filterset=JSON.parse(localStorage.getItem("filters")) || {
-    gender:"",
-    minAge:"",
-    maxAge:"",
-};
 
 
 
 
-document.getElementById("find").addEventListener("click",()=>{
-    filterset.gender=document.getElementById("filter-sex").value;
-    filterset.minAge=document.getElementById("filter-min").value;
-    filterset.maxAge=document.getElementById("filter-max").value;
+document.getElementById("find").addEventListener("click", async () => {
+    const gender = document.getElementById("filter-sex").value;
+    const minAge = document.getElementById("filter-min").value;
+    const maxAge = document.getElementById("filter-max").value;
 
-    currentUser=null;
+    filterset = { gender, minAge, maxAge };
+
+    // Save to localStorage
+    const userKey = userLoggedIn._id;
+    localStorage.setItem(`filters_${userKey}`, JSON.stringify(filterset));
+
+    try {
+        
+        if (userLoggedIn._filterId) {
+            await putFilter(userLoggedIn._filterId, { ...filterset, userId: userKey });
+            console.log("[PUT_filter] Filter updated.");
+        } else {
+            // Nếu chưa có, gọi POST rồi lưu lại _filterId
+            const posted = await postFilter({ ...filterset, userId: userKey });
+            userLoggedIn._filterId = posted._id;
+            localStorage.setItem("user", JSON.stringify(userLoggedIn));
+            console.log("[POST_filter] Filter created.");
+        }
+    } catch (err) {
+        console.error(" Failed to save filter to CrudCrud:", err);
+    }
+
+    currentUser = null;
     loadRandom();
 });
+
 
 
 
