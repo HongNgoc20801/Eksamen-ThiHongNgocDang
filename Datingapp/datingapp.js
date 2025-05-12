@@ -371,6 +371,17 @@ async function showLikedUsers() {
     document.querySelectorAll("#section-liked button[data-id]").forEach(btn => {
         btn.addEventListener("click", async () => {
             const id = btn.getAttribute("data-id");
+
+            const deletedUser = liked.find(u => u._id === id);
+            const userKey = userLoggedIn._id || userLoggedIn.email;
+            const likedListKey = `likedUsers_${userKey}`;
+            const likedList = JSON.parse(localStorage.getItem(likedListKey)) || [];
+
+            const deleteKey = `${deletedUser.name}|${deletedUser.age}|${deletedUser.email}`;
+            const newLikedList = likedList.filter(k => k !== deleteKey);
+            localStorage.setItem(likedListKey, JSON.stringify(newLikedList));
+            console.log("[DELETE_LIKED] Removed from localStorage:", deleteKey);
+
             await deleteLikedUser(id);
             await showLikedUsers(); 
         });
