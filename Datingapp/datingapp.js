@@ -4,6 +4,11 @@ import updateUser from "../Request/PUT_info.js";
 import postFilter from "../Request/POST_filter.js";
 import getFilter from "../Request/GET_filter.js";
 import putFilter from "../Request/PUT_filter.js";
+import postLikedUser from "../Request/POST_liked.js";
+import getLikedUsers from "../Request/GET_liked.js";
+import deleteLikedUser from "../Request/DELETE_liked.js";
+
+
 
 let currentUser = null;
 let filteredCandidates = [];
@@ -59,6 +64,13 @@ document.getElementById("nav-profile").addEventListener("click",()=>{
 
 document.getElementById("nav-swipe").addEventListener("click", async() => {
     showSection("swipe");
+    const userKey = userLoggedIn._id || userLoggedIn.email;
+    const savedSwipe = localStorage.getItem(`currentSwipe_${userKey}`);
+    if (savedSwipe) {
+        currentUser = JSON.parse(savedSwipe);
+        showUser(currentUser);
+        return;
+    }
     if (!currentUser && filteredCandidates.length === 0) {
         try {
             const user = JSON.parse(localStorage.getItem("user"));
@@ -97,7 +109,10 @@ document.getElementById("nav-swipe").addEventListener("click", async() => {
 });
 
 
-document.getElementById("nav-liked").addEventListener("click",()=> showSection("liked"));
+document.getElementById("nav-liked").addEventListener("click", async () => {
+    showSection("liked");
+    await showLikedUsers();
+});
 
 document.getElementById("logout-btn").addEventListener("click", () => {
     localStorage.removeItem("user");
@@ -188,6 +203,9 @@ function showUser(user) {
         return;
     }
     currentUser = user;
+    const userKey = userLoggedIn._id || userLoggedIn.email;
+    localStorage.setItem(`currentSwipe_${userKey}`, JSON.stringify(user));
+
     document.getElementById("random-card").innerHTML = `
         <img src="${user.picture.large || user.picture}" alt="User-Photo" style="border-radius: 50%; width: 100px;">
         <h4>${user.name.first || user.name}</h4>
@@ -217,9 +235,13 @@ async function loadRandom() {
     ]);
     const data = await res.json();
 
-    const userKey = userLoggedIn.email || userLoggedIn._id;
+    const userKey = userLoggedIn._id || userLoggedIn.email;
     const dislikedGeneral = JSON.parse(localStorage.getItem(`dislikedGeneral_${userKey}`)) || [];
     const dislikedFiltered = JSON.parse(localStorage.getItem(`dislikedFiltered_${userKey}`)) || [];
+    const likedList = JSON.parse(localStorage.getItem(`likedUsers_${userKey}`)) || [];
+    console.log("[LikedList] Keys stored in localStorage:", likedList);
+
+
 
     const randomUsers = data.results.map(u => ({
         name: `${u.name.first} ${u.name.last}`,
@@ -256,8 +278,15 @@ async function loadRandom() {
             const matchGender = !filters.gender || user.gender === filters.gender;
 
             const key = `${user.name}|${user.dob.age}|${user.email}`;
+            if (likedList.includes(key)) {
+                console.log(`[FILTER OUT - Liked] Matched key: ${key}`);
+            } else {
+            console.log(`[CHECK] Current user key not in likedList: ${key}`);
+            }
+
             const notDisliked = !dislikedFiltered.includes(key);
-            return matchAge && matchGender && notDisliked;
+            const notLiked = !likedList.includes(key);
+            return matchAge && matchGender && notDisliked && notLiked;
         });
 
         console.log("Users after filtering:", candidates.map(u => ({
@@ -273,7 +302,7 @@ async function loadRandom() {
     } else {
         const available = candidates.filter(user => {
             const key = `${user.name}|${user.dob.age}|${user.email}`;
-            return !dislikedGeneral.includes(key);
+            return !dislikedGeneral.includes(key) && !likedList.includes(key);
         });
 
         if (available.length === 0) {
@@ -291,12 +320,88 @@ async function loadRandom() {
 
 }
 
+async function saveUserLiked(user) {
+    try {
+        const userKey = userLoggedIn._id || userLoggedIn.email;
+        const likedUser = {
+            ownerId: userKey,
+            name: user.name.first || user.name,
+            age: user.dob.age,
+            email: user.email,
+            picture: user.picture.large || user.picture,
+            location: user.location,
+            isCustom: user.isCustom || false
+        };
 
-document.getElementById("btn-like").addEventListener("click", () =>{
-    saveUserLiked(currentUser);
-    currentUser =null;
-    loadRandom();
+        await postLikedUser(likedUser);
+        console.log("[Like] User saved to liked list:", likedUser);
+    } catch (err) {
+        console.error("[Like] Failed to save user:", err);
+    }
+}
+
+async function showLikedUsers() {
+    const container = document.getElementById("section-liked");
+    container.innerHTML = "<h3>Your Liked Users</h3>";
+
+    const userKey = userLoggedIn._id || userLoggedIn.email;
+    const allLiked = await getLikedUsers();
+
+    const liked = allLiked.filter(u => u.ownerId === userKey);
+
+    if (liked.length === 0) {
+        container.innerHTML += "<p>No liked users yet.</p>";
+        return;
+    }
+
+    liked.forEach(user => {
+        const card = document.createElement("div");
+        card.classList.add("liked-card");
+        card.innerHTML = `
+            <img src="${user.picture}" alt="User Image" style="width: 80px; border-radius: 50%;">
+            <h4>${user.name}</h4>
+            <p>Age: ${user.age}</p>
+            <p>Location: ${user.location.city}, ${user.location.country}</p>
+            <button class="btn btn-danger btn-sm" data-id="${user._id}">Delete</button>
+            <hr/>
+        `;
+        container.appendChild(card);
+    });
+
+    document.querySelectorAll("#section-liked button[data-id]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const id = btn.getAttribute("data-id");
+            await deleteLikedUser(id);
+            await showLikedUsers(); 
+        });
+    });
+}
+
+
+document.getElementById("btn-like").addEventListener("click", async () => {
+    const userKey = userLoggedIn._id || userLoggedIn.email;
+    
+
+    localStorage.removeItem(`currentSwipe_${userKey}`);
+
+    await saveUserLiked(currentUser);
+    const likeKey = `${currentUser.name}|${currentUser.dob.age}|${currentUser.email}`;
+    const likedListKey = `likedUsers_${userKey}`;
+    const likedList = JSON.parse(localStorage.getItem(likedListKey)) || [];
+
+    if (!likedList.includes(likeKey)) {
+        likedList.push(likeKey);
+        localStorage.setItem(likedListKey, JSON.stringify(likedList));
+    }
+    currentUser = null;
+
+    if (filteredCandidates.length > 0) {
+        showUser(filteredCandidates.shift());
+    } else {
+        loadRandom();
+    }
 });
+
 
 document.getElementById("btn-dislike").addEventListener("click", () => {
     if (currentUser) {

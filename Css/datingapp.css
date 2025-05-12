@@ -269,4 +269,48 @@ section {
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
+.liked-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background-color: #f7f9fc;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.liked-card img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.liked-card h4 {
+    margin: 0 0 0.25rem 0;
+}
+
+.liked-card p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.liked-card button {
+    margin-left: auto;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background-color 0.2s;
+}
+
+.liked-card button:hover {
+    background-color: #c0392b;
+}
 
