@@ -161,11 +161,11 @@ async function loadCrudUsers() {
 
         .map(u => {
             
-            const age = parseInt(u.age);
+            const parsedAge = parseInt(u.age);
 
             return {
                 name: u.name,
-                age: age,
+                age: parsedAge,
                 gender: u.gender || "", 
                 email: u.email || "unknown@gmail.com",
                 picture: "https://cdn-icons-png.flaticon.com/512/1077/1077114.png",
@@ -174,11 +174,11 @@ async function loadCrudUsers() {
                     country: u.location?.split(",")[1]?.trim() || "custom"  
                 },
                 
-                dob: { age},
+                dob: { age: parsedAge },
                 isCustom: true
             };
         })
-        .filter(u => u.age && u.gender); 
+        .filter(u => !isNaN(u.age)); 
 }
 
 function showUser(user) {
@@ -247,12 +247,12 @@ async function loadRandom() {
 
 
     if (workFilter){
-        const min = filters.minAge ? parseInt(filters.minAge) : null;
-        const max = filters.maxAge ? parseInt(filters.maxAge) : null;
+        const min = parseInt(filters.minAge);
+        const max = parseInt(filters.maxAge);
 
         candidates = candidates.filter(user => {
             const age = Number(user.dob.age);
-            const matchAge = (!min || age >= min) && (!max || age <= max);
+            const matchAge = (isNaN(min) || age >= min) && (isNaN(max) || age <= max);
             const matchGender = !filters.gender || user.gender === filters.gender;
 
             const key = `${user.name}|${user.dob.age}|${user.email}`;
@@ -424,5 +424,3 @@ function showEditForm(user) {
         }
     });
 }
-
-

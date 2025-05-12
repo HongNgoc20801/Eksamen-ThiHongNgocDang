@@ -12,4 +12,3 @@ export default async function updateUser(userId, updatedUserData) {
     throw err;
   }
 }
-
