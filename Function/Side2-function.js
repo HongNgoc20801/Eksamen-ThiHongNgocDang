@@ -12,4 +12,8 @@ function filteredCandidates(users,filter,dislikedList =[], likedList =[]){
         return matchAge && matchGender && notDisliked && notLiked;
     })
 }
-module.exports = { filteredCandidates };
+function getDayKey(userId){
+    const day = new Date ().toISOString().split("I") [0];
+    return `likeLimit_${userId}_${day}`;
+}
+module.exports = { filteredCandidates, getDayKey };

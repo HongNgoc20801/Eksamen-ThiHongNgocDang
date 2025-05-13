@@ -1,4 +1,4 @@
-const {filteredCandidates}=require("../Function/Side2-function.js")
+const {filteredCandidates, getDayKey}=require("../Function/Side2-function.js")
 
 const tryUsers=[
     {name: "Liuliu", email:"liuliu@gmail.com", gender:"female", dob:{age:22}},
@@ -28,5 +28,14 @@ describe("filteredCandidates",()=>{
     test("Non filter return all users has not been dislike /liked",()=>{
         const result = filteredCandidates(tryUsers, {}, [], []);
         expect(result.length).toBe(3);
+    });
+});
+describe("getDayKey", ()=>{
+    test(" create key as day and id", ()=>{
+        const now  = new Date ();
+        const day =  now. toISOString();
+        const key =`likedLimit_aaaa111_${day}`;
+        expect(key).toBe(key);
+
     });
 });
