@@ -19,4 +19,14 @@ describe("filteredCandidates",()=>{
         const result = filteredCandidates(tryUsers,filters,disliked,[]);
         expect(result.find(u => u.name === "Liuliu")).toBeUndefined();
     });
-})
+    test(" take out user has been liked", ()=>{
+        const filters={};
+        const liked = ["Liuliu1 | 29 | liuliu1@gmail.com"];
+        const result = filteredCandidates(tryUsers,filters,[],liked);
+        expect (result.find(u => u.name === "Liuliu1")).toBeUndefined();
+    });
+    test("Non filter return all users has not been dislike /liked",()=>{
+        const result = filteredCandidates(tryUsers, {}, [], []);
+        expect(result.length).toBe(3);
+    });
+});
