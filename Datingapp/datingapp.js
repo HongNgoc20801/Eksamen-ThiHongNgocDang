@@ -17,6 +17,23 @@ let filterset = { gender: "", minAge: "", maxAge: "" };
 
 const userLoggedIn = JSON.parse(localStorage.getItem("user"));
 
+// 🌟 Tilleggsfunksjonalitet
+function getTodayKey() {
+    const today = new Date().toISOString().split("T")[0];
+    return `likeLimit_${userLoggedIn._id}_${today}`;
+}
+
+function getRemainingLikes() {
+    const key = getTodayKey();
+    const stored = JSON.parse(localStorage.getItem(key));
+    return stored ? stored.remaining : 20;
+}
+
+function setRemainingLikes(count) {
+    const key = getTodayKey();
+    localStorage.setItem(key, JSON.stringify({ remaining: count }));
+}
+
 if (!userLoggedIn) {
     alert("Please log in to continue using the app.");
     window.location.href = "/Login/login.html";
@@ -27,6 +44,11 @@ if (!userLoggedIn) {
             <p>Welcome to Dating App, where you can connect with others, <strong>${userLoggedIn.name}</strong>!</p>
         `;
         showSection("home");
+        
+        const remain = getRemainingLikes();
+        document.getElementById("btn-like").innerText = `Like (${remain} left)`;
+        document.getElementById("btn-like").disabled = remain <= 0;
+
     });
 }
 
@@ -323,6 +345,19 @@ async function loadRandom() {
 async function saveUserLiked(user) {
     try {
         const userKey = userLoggedIn._id || userLoggedIn.email;
+        const allLiked = await getLikedUsers(); // Fetch toàn bộ trước
+        const alreadyLiked = allLiked.find(u =>
+            u.ownerId === userKey &&
+            u.name === (user.name.first || user.name) &&
+            u.age === user.dob.age &&
+            u.email === user.email
+        );
+
+        if (alreadyLiked) {
+            console.log("[Like] User already liked, skipping POST");
+            return;
+        }
+
         const likedUser = {
             ownerId: userKey,
             name: user.name.first || user.name,
@@ -339,6 +374,7 @@ async function saveUserLiked(user) {
         console.error("[Like] Failed to save user:", err);
     }
 }
+
 
 async function showLikedUsers() {
     const container = document.getElementById("section-liked");
@@ -373,6 +409,10 @@ async function showLikedUsers() {
             const id = btn.getAttribute("data-id");
 
             const deletedUser = liked.find(u => u._id === id);
+            if (!deletedUser) {
+                console.warn("[Delete] User not found in liked list:", id);
+                return;
+            }
             const userKey = userLoggedIn._id || userLoggedIn.email;
             const likedListKey = `likedUsers_${userKey}`;
             const likedList = JSON.parse(localStorage.getItem(likedListKey)) || [];
@@ -390,12 +430,23 @@ async function showLikedUsers() {
 
 
 document.getElementById("btn-like").addEventListener("click", async () => {
-    const userKey = userLoggedIn._id || userLoggedIn.email;
-    
+    if (!currentUser) return; // Tránh lỗi nếu currentUser là null
 
-    localStorage.removeItem(`currentSwipe_${userKey}`);
+    const remain = getRemainingLikes();
+    if (remain <= 0) {
+        alert("You have used up all your likes today!");
+        return;
+    }
 
     await saveUserLiked(currentUser);
+
+    setRemainingLikes(remain - 1);
+    document.getElementById("btn-like").innerText = `Like (${remain - 1} left)`;
+    document.getElementById("btn-like").disabled = (remain - 1) <= 0;
+
+    const userKey = userLoggedIn._id || userLoggedIn.email;
+    localStorage.removeItem(`currentSwipe_${userKey}`);
+
     const likeKey = `${currentUser.name}|${currentUser.dob.age}|${currentUser.email}`;
     const likedListKey = `likedUsers_${userKey}`;
     const likedList = JSON.parse(localStorage.getItem(likedListKey)) || [];
@@ -404,6 +455,7 @@ document.getElementById("btn-like").addEventListener("click", async () => {
         likedList.push(likeKey);
         localStorage.setItem(likedListKey, JSON.stringify(likedList));
     }
+
     currentUser = null;
 
     if (filteredCandidates.length > 0) {
