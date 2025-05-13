@@ -29,4 +29,4 @@ describe("Register validation tests",()=>{
     test("Under 18",()=>{
         expect(validateRegister("liuliu","liu@gmail.com","1111",17)).toBe(false)
     });
-})
+});
