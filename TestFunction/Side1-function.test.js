@@ -1,5 +1,5 @@
 
-const { validateLogin } = require("../Function/Side1-function.js")
+const { validateLogin, validateRegister } = require("../Function/Side1-function.js")
 
 describe("Login validation",() =>{
     const users =
@@ -18,3 +18,15 @@ describe("Login validation",() =>{
     });
     
 });
+
+describe("Register validation tests",()=>{
+    test(" Valid Input ", ()=>{
+        expect(validateRegister("liuliu","liu@gmail.com","1111",24)).toBe(true);
+    });
+    test ("Email is not valid", ()=>{
+        expect(validateRegister("liuliu", "liuliugamil.com","1111",24)).toBe(false)
+    });
+    test("Under 18",()=>{
+        expect(validateRegister("liuliu","liu@gmail.com","1111",17)).toBe(false)
+    });
+})
