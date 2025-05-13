@@ -17,7 +17,7 @@ let filterset = { gender: "", minAge: "", maxAge: "" };
 
 const userLoggedIn = JSON.parse(localStorage.getItem("user"));
 
-// 🌟 Tilleggsfunksjonalitet
+//  Tilleggsfunksjonalitet
 function getTodayKey() {
     const today = new Date().toISOString().split("T")[0];
     return `likeLimit_${userLoggedIn._id}_${today}`;
