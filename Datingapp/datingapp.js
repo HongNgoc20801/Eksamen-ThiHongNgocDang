@@ -16,24 +16,6 @@ let filterset = { gender: "", minAge: "", maxAge: "" };
 
 
 const userLoggedIn = JSON.parse(localStorage.getItem("user"));
-
-//  Tilleggsfunksjonalitet
-function getTodayKey() {
-    const today = new Date().toISOString().split("T")[0];
-    return `likeLimit_${userLoggedIn._id}_${today}`;
-}
-
-function getRemainingLikes() {
-    const key = getTodayKey();
-    const stored = JSON.parse(localStorage.getItem(key));
-    return stored ? stored.remaining : 20;
-}
-
-function setRemainingLikes(count) {
-    const key = getTodayKey();
-    localStorage.setItem(key, JSON.stringify({ remaining: count }));
-}
-
 if (!userLoggedIn) {
     alert("Please log in to continue using the app.");
     window.location.href = "/Login/login.html";
@@ -52,28 +34,29 @@ if (!userLoggedIn) {
     });
 }
 
-async function loadUserFilter() {
-    try {
-        const data = await getFilter();
-        if (!Array.isArray(data)) {
-            console.warn("[GET_filter] Response is not an array:", data);
-            return;
-        }
+//  Tilleggsfunksjonalitet
+function getTodayKey() {
+    const today = new Date().toISOString().split("T")[0];
+    return `likeLimit_${userLoggedIn._id}_${today}`;
+}
 
-        const userFilter = data.find(item => item.userId === userLoggedIn._id);
-        if (userFilter) {
-            filterset = userFilter;
-            userLoggedIn._filterId = userFilter._id;
-            localStorage.setItem("user", JSON.stringify(userLoggedIn));
-            console.log("[GET_filter] Loaded saved filter:", userFilter);
+function getRemainingLikes() {
+    const key = getTodayKey();
+    const stored = JSON.parse(localStorage.getItem(key));
+    return stored ? stored.remaining : 20;
+}
 
-            document.getElementById("filter-sex").value = filterset.gender || "";
-            document.getElementById("filter-min").value = filterset.minAge || "";
-            document.getElementById("filter-max").value = filterset.maxAge || "";
-        }
-    } catch (err) {
-        console.error("[GET_filter] Failed to load filter", err);
-    }
+function setRemainingLikes(count) {
+    const key = getTodayKey();
+    localStorage.setItem(key, JSON.stringify({ remaining: count }));
+}
+
+function showSection(sectionId){
+    const section =["home", "profile", "swipe", "liked"];
+    section.forEach((id)=> {
+        const element =document.getElementById(`section-${id}`);
+        if (element) element.style.display = id ===sectionId ? "block" :"none";
+    });
 }
 
 //Nav  
@@ -142,19 +125,104 @@ document.getElementById("logout-btn").addEventListener("click", () => {
     window.location.href = "/Login/login.html"; 
 });
 
+//showUserinformation
+function showUserInformation(user){
+    const informationDiv = document.getElementById("section-profile");
+    informationDiv.innerHTML=`
+        <h3> Your Profile </h3>
+        <p><strong>Username:</strong> ${user.name}</p>
+        <p><strong>Password:</strong> ${"*".repeat(user.password.length)}</p>
+        <p><strong>Email:</strong> ${user.email || "Not set"}</p> 
+        <p><strong>Age:</strong> ${user.age || "Not set"}</p>
+        <p><strong>Gender:</strong> ${user.gender || "Not set"}</p>
+        <p><strong>Location:</strong> ${user.location || "Not set"}</p>
+        <p><strong>Bio:</strong> ${user.bio || "Not Bio set"}</p>
+        <br>
+        <button id="edit-profile-btn" style="margin-top:1.2rem; background-color:#46a2da; color:white; border-radius:5px;">Edit Profile</button>
+        <button id="delete-user-btn" style="margin-top:1.2rem; background-color:red; color:white; border-radius:5px;">Delete My Account</button>
+    
+    `;
 
-function showSection(sectionId){
-    const section =["home", "profile", "swipe", "liked"];
-    section.forEach((id)=> {
-        const element =document.getElementById(`section-${id}`);
-        if (element) element.style.display = id ===sectionId ? "block" :"none";
+    document.getElementById("edit-profile-btn").addEventListener("click",()=>{
+        showEditForm(user);
+    });
+    document.getElementById("delete-user-btn").addEventListener("click",async()=>{
+        const confirmDelete = confirm("Do you really want to do it? ");
+        if(!confirmDelete)return;
+        try{
+            await deleteCrudUser(user._id);
+            localStorage.removeItem("user");
+            alert("Successfully!");
+            window.location.href="/Login/login.html";
+        }catch(err){
+            alert("Unsuccess to delete account!");
+            console.error(err);
+        }
     });
 }
 
+function showEditForm(user) {
+  const informationDiv = document.getElementById("section-profile");
+  informationDiv.innerHTML = `
+    <h3>Edit Profile</h3>
+    <form id="edit-profile-form">
+        <input type="text" id="edit-username" value="${user.name}" required/>
+        <input type="email" id="edit-email" value="${user.email || ''}" placeholder="Email" required/> 
+        <input type="password" id="edit-password" value="${user.password}" required/>
+        <input type="number" id="edit-age" value="${user.age || ''}" placeholder="Age" />
+        <select id="edit-gender">
+            <option value="">Select gender</option>
+            <option value="male" ${user.gender === "male" ? "selected" : ""}>Male</option>
+            <option value="female" ${user.gender === "female" ? "selected" : ""}>Female</option>
+        </select>
+        <input type="text" id="edit-location" value="${user.location || ''}" placeholder="Location"/>
+        <textarea id="edit-bio" placeholder=" write something to let people know more about you">${user.bio || ''}</textarea>
 
+        <br/>
+        <button type="submit">Save Changes</button>
+    </form>
+  `;
 
+  document.getElementById("edit-profile-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const updatedUser = {
+      name: document.getElementById("edit-username").value,
+      email: document.getElementById("edit-email").value,
+      password: document.getElementById("edit-password").value,
+      age:document.getElementById("edit-age").value,
+      gender: document.getElementById("edit-gender").value,
+      location:document.getElementById("edit-location").value,
+      bio:document.getElementById("edit-bio").value,
 
+    };
 
+    console.log(" Local user object:", user);
+    console.log(" ID to PUT:", user._id);
+
+    if (!user._id) {
+      alert("User ID is missing. Cannot update.");
+      return;
+    }
+
+    try {
+            await updateUser(user._id, updatedUser);
+            const updatedWithId = { ...updatedUser, _id: user._id };
+            localStorage.setItem("user", JSON.stringify(updatedWithId));
+
+            Object.assign(userLoggedIn, updatedWithId);
+            document.getElementById("information-user").innerHTML = `
+                <p>Welcome, <strong>${updatedWithId.name}</strong></p>
+            `;
+            alert("Profile updated!");
+            showUserInformation(updatedWithId);
+        } catch (err) {
+            alert("Failed to update profile.");
+            console.log(err);
+        }
+    });
+}
+
+// Filter
 document.getElementById("find").addEventListener("click", async () => {
     const gender = document.getElementById("filter-sex").value;
     const minAge = document.getElementById("filter-min").value;
@@ -185,6 +253,32 @@ document.getElementById("find").addEventListener("click", async () => {
     currentUser = null;
     loadRandom();
 });
+
+
+async function loadUserFilter() {
+    try {
+        const data = await getFilter();
+        if (!Array.isArray(data)) {
+            console.warn("[GET_filter] Response is not an array:", data);
+            return;
+        }
+
+        const userFilter = data.find(item => item.userId === userLoggedIn._id);
+        if (userFilter) {
+            filterset = userFilter;
+            userLoggedIn._filterId = userFilter._id;
+            localStorage.setItem("user", JSON.stringify(userLoggedIn));
+            console.log("[GET_filter] Loaded saved filter:", userFilter);
+
+            document.getElementById("filter-sex").value = filterset.gender || "";
+            document.getElementById("filter-min").value = filterset.minAge || "";
+            document.getElementById("filter-max").value = filterset.maxAge || "";
+        }
+    } catch (err) {
+        console.error("[GET_filter] Failed to load filter", err);
+    }
+}
+
 
 
 
@@ -218,25 +312,6 @@ async function loadCrudUsers() {
         .filter(u => !isNaN(u.age)); 
 }
 
-function showUser(user) {
-    if (!user) {
-        document.getElementById("random-card").innerHTML =
-            "<p>No more matches. Try changing your filters.</p>";
-        return;
-    }
-    currentUser = user;
-    const userKey = userLoggedIn._id || userLoggedIn.email;
-    localStorage.setItem(`currentSwipe_${userKey}`, JSON.stringify(user));
-
-    document.getElementById("random-card").innerHTML = `
-        <img src="${user.picture.large || user.picture}" alt="User-Photo" style="border-radius: 50%; width: 100px;">
-        <h4>${user.name.first || user.name}</h4>
-        <p>Email: ${user.email}</p>
-        <p>Age: ${user.dob.age}</p>
-        <p>Location: ${user.location.city}, ${user.location.country}</p>
-        ${user.isCustom ? "<span class='badge'>Custom User</span>" : ""}
-    `;
-}
 async function loadRandom() {
     await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -341,6 +416,54 @@ async function loadRandom() {
     
 
 }
+
+function showUser(user) {
+    if (!user) {
+        document.getElementById("random-card").innerHTML =
+            "<p>No more matches. Try changing your filters.</p>";
+        return;
+    }
+    currentUser = user;
+    const userKey = userLoggedIn._id || userLoggedIn.email;
+    localStorage.setItem(`currentSwipe_${userKey}`, JSON.stringify(user));
+
+    document.getElementById("random-card").innerHTML = `
+        <img src="${user.picture.large || user.picture}" alt="User-Photo" style="border-radius: 50%; width: 100px;">
+        <h4>${user.name.first || user.name}</h4>
+        <p>Email: ${user.email}</p>
+        <p>Age: ${user.dob.age}</p>
+        <p>Location: ${user.location.city}, ${user.location.country}</p>
+        ${user.isCustom ? "<span class='badge'>Custom User</span>" : ""}
+    `;
+}
+
+document.getElementById("btn-dislike").addEventListener("click", () => {
+    if (currentUser) {
+        const key = `${currentUser.name}|${currentUser.dob.age}|${currentUser.email}`;
+        const usingFilter =
+            (filterset.gender && filterset.gender !== "") ||
+            (filterset.minAge && filterset.minAge.trim() !== "") ||
+            (filterset.maxAge && filterset.maxAge.trim() !== "");
+
+        const userKey = userLoggedIn.email || userLoggedIn._id;
+        const listKey = usingFilter ? `dislikedFiltered_${userKey}` : `dislikedGeneral_${userKey}`;
+        const list = JSON.parse(localStorage.getItem(listKey)) || [];
+
+        if (!list.includes(key)) {
+            list.push(key);
+            localStorage.setItem(listKey, JSON.stringify(list));
+        }
+    }
+
+    currentUser = null;
+
+    if (filteredCandidates.length > 0) {
+        showUser(filteredCandidates.shift());
+    } else {
+        loadRandom(); 
+    }
+});
+
 
 async function saveUserLiked(user) {
     try {
@@ -466,129 +589,7 @@ document.getElementById("btn-like").addEventListener("click", async () => {
 });
 
 
-document.getElementById("btn-dislike").addEventListener("click", () => {
-    if (currentUser) {
-        const key = `${currentUser.name}|${currentUser.dob.age}|${currentUser.email}`;
-        const usingFilter =
-            (filterset.gender && filterset.gender !== "") ||
-            (filterset.minAge && filterset.minAge.trim() !== "") ||
-            (filterset.maxAge && filterset.maxAge.trim() !== "");
-
-        const userKey = userLoggedIn.email || userLoggedIn._id;
-        const listKey = usingFilter ? `dislikedFiltered_${userKey}` : `dislikedGeneral_${userKey}`;
-        const list = JSON.parse(localStorage.getItem(listKey)) || [];
-
-        if (!list.includes(key)) {
-            list.push(key);
-            localStorage.setItem(listKey, JSON.stringify(list));
-        }
-    }
-
-    currentUser = null;
-
-    if (filteredCandidates.length > 0) {
-        showUser(filteredCandidates.shift());
-    } else {
-        loadRandom(); 
-    }
-});
 
 
 
 
-//showUserinformation
-function showUserInformation(user){
-    const informationDiv = document.getElementById("section-profile");
-    informationDiv.innerHTML=`
-        <h3> Your Profile </h3>
-        <p><strong>Username:</strong> ${user.name}</p>
-        <p><strong>Password:</strong> ${"*".repeat(user.password.length)}</p>
-        <p><strong>Email:</strong> ${user.email || "Not set"}</p> 
-        <p><strong>Age:</strong> ${user.age || "Not set"}</p>
-        <p><strong>Gender:</strong> ${user.gender || "Not set"}</p>
-        <p><strong>Location:</strong> ${user.location || "Not set"}</p>
-        <p><strong>Bio:</strong> ${user.bio || "Not Bio set"}</p>
-        <br>
-        <button id="edit-profile-btn" style="margin-top:1.2rem; background-color:#46a2da; color:white; border-radius:5px;">Edit Profile</button>
-        <button id="delete-user-btn" style="margin-top:1.2rem; background-color:red; color:white; border-radius:5px;">Delete My Account</button>
-    
-    `;
-
-    document.getElementById("edit-profile-btn").addEventListener("click",()=>{
-        showEditForm(user);
-    });
-    document.getElementById("delete-user-btn").addEventListener("click",async()=>{
-        const confirmDelete = confirm("Do you really want to do it? ");
-        if(!confirmDelete)return;
-        try{
-            await deleteCrudUser(user._id);
-            localStorage.removeItem("user");
-            alert("Successfully!");
-            window.location.href="/Login/login.html";
-        }catch(err){
-            alert("Unsuccess to delete account!");
-            console.error(err);
-        }
-    });
-}
-
-function showEditForm(user) {
-  const informationDiv = document.getElementById("section-profile");
-  informationDiv.innerHTML = `
-    <h3>Edit Profile</h3>
-    <form id="edit-profile-form">
-        <input type="text" id="edit-username" value="${user.name}" required/>
-        <input type="email" id="edit-email" value="${user.email || ''}" placeholder="Email" required/> 
-        <input type="password" id="edit-password" value="${user.password}" required/>
-        <input type="number" id="edit-age" value="${user.age || ''}" placeholder="Age" />
-        <select id="edit-gender">
-            <option value="">Select gender</option>
-            <option value="male" ${user.gender === "male" ? "selected" : ""}>Male</option>
-            <option value="female" ${user.gender === "female" ? "selected" : ""}>Female</option>
-        </select>
-        <input type="text" id="edit-location" value="${user.location || ''}" placeholder="Location"/>
-        <textarea id="edit-bio" placeholder=" write something to let people know more about you">${user.bio || ''}</textarea>
-
-        <br/>
-        <button type="submit">Save Changes</button>
-    </form>
-  `;
-
-  document.getElementById("edit-profile-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const updatedUser = {
-      name: document.getElementById("edit-username").value,
-      email: document.getElementById("edit-email").value,
-      password: document.getElementById("edit-password").value,
-      age:document.getElementById("edit-age").value,
-      gender: document.getElementById("edit-gender").value,
-      location:document.getElementById("edit-location").value,
-      bio:document.getElementById("edit-bio").value,
-
-    };
-
-    console.log(" Local user object:", user);
-    console.log(" ID to PUT:", user._id);
-
-    if (!user._id) {
-      alert("User ID is missing. Cannot update.");
-      return;
-    }
-
-    try {
-            await updateUser(user._id, updatedUser);
-            const updatedWithId = { ...updatedUser, _id: user._id };
-            localStorage.setItem("user", JSON.stringify(updatedWithId));
-
-            Object.assign(userLoggedIn, updatedWithId);
-            document.getElementById("information-user").innerHTML = `
-                <p>Welcome, <strong>${updatedWithId.name}</strong></p>
-            `;
-            alert("Profile updated!");
-            showUserInformation(updatedWithId);
-        } catch (err) {
-            alert("Failed to update profile.");
-            console.log(err);
-        }
-    });
-}
